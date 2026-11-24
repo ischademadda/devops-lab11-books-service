@@ -1,0 +1,125 @@
+openapi: 3.0.3
+info:
+  title: Books microservice
+  description: "Лабораторная работа 11: RESTful микросервис (Go + PostgreSQL + Docker)."
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      tags: [service]
+      summary: Проверка сервиса и БД
+      responses:
+        "200": {description: OK}
+        "503": {$ref: "#/components/responses/Error"}
+  /books:
+    get:
+      tags: [books]
+      summary: Список книг
+      parameters:
+        - {name: author, in: query, schema: {type: string}, description: Фильтр по автору (подстрока, без учёта регистра)}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 50}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, default: 0}}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/Book"}}
+        "422": {$ref: "#/components/responses/Error"}
+    post:
+      tags: [books]
+      summary: Создать книгу
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/BookCreate"}
+      responses:
+        "201":
+          description: Создана
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Book"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /books/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: integer}}
+    get:
+      tags: [books]
+      summary: Получить книгу по id
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Book"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    patch:
+      tags: [books]
+      summary: Частично обновить книгу (передавайте только изменяемые поля)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/BookUpdate"}
+      responses:
+        "200":
+          description: Обновлена
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Book"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    delete:
+      tags: [books]
+      summary: Удалить книгу
+      responses:
+        "204": {description: Удалена}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+components:
+  responses:
+    Error:
+      description: Ошибка
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+  schemas:
+    Book:
+      type: object
+      properties:
+        id: {type: integer, example: 1}
+        title: {type: string, example: Мастер и Маргарита}
+        author: {type: string, example: Михаил Булгаков}
+        year: {type: integer, example: 1967}
+        isbn: {type: string, nullable: true, example: 978-5-17-090000-1}
+        created_at: {type: string, format: date-time}
+    BookCreate:
+      type: object
+      required: [title, author, year]
+      properties:
+        title: {type: string, minLength: 1, maxLength: 200, example: Мастер и Маргарита}
+        author: {type: string, minLength: 1, maxLength: 100, example: Михаил Булгаков}
+        year: {type: integer, minimum: 1, maximum: 2100, example: 1967}
+        isbn: {type: string, nullable: true, pattern: '^[0-9][0-9-]{8,15}[0-9Xx]$', example: 978-5-17-090000-1, description: Уникален}
+    BookUpdate:
+      type: object
+      properties:
+        title: {type: string, minLength: 1, maxLength: 200}
+        author: {type: string, minLength: 1, maxLength: 100}
+        year: {type: integer, minimum: 1, maximum: 2100}
+        isbn: {type: string, nullable: true, pattern: '^[0-9][0-9-]{8,15}[0-9Xx]$', description: null сбрасывает ISBN}
+    Error:
+      type: object
+      properties:
+        error: {type: string}
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field: {type: string}
+              message: {type: string}

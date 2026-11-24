@@ -1,0 +1,6 @@
+.git/
+.env
+postman/
+README.md
+docker-compose.yml
+Dockerfile

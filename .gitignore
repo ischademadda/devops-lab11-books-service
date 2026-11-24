@@ -1,0 +1,6 @@
+/books
+*.exe
+*.test
+.env
+.idea/
+.vscode/
